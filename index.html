@@ -7,8 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #020203; color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #gameWrapper { position: relative; }
+        body { background-color: #020203; color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; margin: 0; }
+        
+        #gameWrapper { position: relative; display: flex; justify-content: center; align-items: center; }
         canvas { background-color: #060608; box-shadow: 0 0 80px rgba(0, 229, 255, 0.1); border-radius: 8px; border: 1px solid #1a1a24; transition: box-shadow 0.3s; }
         
         .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
@@ -52,6 +53,8 @@
 </head>
 <body>
     <div id="gameWrapper">
+        <canvas id="gameCanvas" width="900" height="600"></canvas>
+
         <div id="alertText">DARK SECTOR ENTERED</div>
         
         <div id="hud" class="hidden">
@@ -84,7 +87,11 @@
                 <button class="diff-btn" data-diff="hard">HARD</button>
             </div>
 
-            <button class="btn" id="startBtn">INITIALIZE</button>
+            <div style="display: flex; gap: 10px; align-items: center; flex-direction: column;">
+                <button class="btn" id="startBtn">INITIALIZE</button>
+                
+                <button class="btn" id="fullscreenBtn" style="font-size: 0.9rem; padding: 8px 25px; border-color: #444; color: #fff; background: rgba(255,255,255,0.05); text-shadow: none; box-shadow: none;">ENTER FULLSCREEN ⛶</button>
+            </div>
             
             <div class="instructions">
                 <span class="key">SPACE</span> Pulse/Fly &nbsp;|&nbsp; <span class="key">SHIFT</span> Change Color &nbsp;|&nbsp; <span class="key">HOLD F</span> Slow Time<br>
@@ -104,7 +111,6 @@
             </div>
         </div>
 
-        <canvas id="gameCanvas" width="900" height="600"></canvas>
     </div>
 
     <script>
@@ -117,10 +123,36 @@
             alertText: document.getElementById('alertText'), statusIndicator: document.getElementById('statusIndicator'),
             playerNameInput: document.getElementById('playerName'), dashHighScore: document.getElementById('dashHighScore'),
             dashGames: document.getElementById('dashGames'), startBtn: document.getElementById('startBtn'),
+            fullscreenBtn: document.getElementById('fullscreenBtn'), // Linked Fullscreen Button
             retryBtn: document.getElementById('retryBtn'), menuBtn: document.getElementById('menuBtn'),
             goScore: document.getElementById('goScore'), goHighScore: document.getElementById('goHighScore'),
             diffBtns: document.querySelectorAll('.diff-btn'), allBtns: document.querySelectorAll('.btn, .diff-btn')
         };
+
+        // Fullscreen Logic
+        ui.fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+            audio.play('hover'); // Play click sound
+        });
+
+        // Listen for Esc key or other fullscreen changes to update button text
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                ui.fullscreenBtn.innerText = "EXIT FULLSCREEN ⛶";
+                ui.fullscreenBtn.style.color = "#00E5FF";
+                ui.fullscreenBtn.style.borderColor = "#00E5FF";
+            } else {
+                ui.fullscreenBtn.innerText = "ENTER FULLSCREEN ⛶";
+                ui.fullscreenBtn.style.color = "#fff";
+                ui.fullscreenBtn.style.borderColor = "#444";
+            }
+        });
 
         // ADVANCED AUDIO ENGINE
         const audio = {
@@ -146,7 +178,6 @@
             }
         };
 
-        // Attach hover sounds to all buttons
         ui.allBtns.forEach(btn => btn.addEventListener('mouseenter', () => audio.play('hover')));
 
         const COLOR_1 = '#00E5FF'; const COLOR_2 = '#FF007F'; 
@@ -199,7 +230,7 @@
                 if(shieldActive) { shieldTimer--; if(shieldTimer <= 0) { shieldActive = false; if(!isWarp) ui.statusIndicator.style.display = 'none'; } }
                 if(isWarp) { 
                     warpTimer--; 
-                    if(warpTimer === 1) audio.play('warpEnd'); // Audio cue for ending
+                    if(warpTimer === 1) audio.play('warpEnd'); 
                     if(warpTimer <= 0) { isWarp = false; config.speed = config.baseSpeed; if(!shieldActive) ui.statusIndicator.style.display = 'none'; canvas.classList.remove('warp-glow'); } 
                 }
             },
